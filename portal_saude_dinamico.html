@@ -1,0 +1,148 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Portal de Saúde Pública</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    #map { height: 300px; width: 100%; }
+    .hidden { display: none; }
+    .fade-in { animation: fadeIn 0.5s ease-in-out; }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+
+  <header class="bg-blue-600 text-white p-6">
+    <h1 class="text-2xl font-bold">Portal Saúde +</h1>
+    <p class="text-sm">Informações e serviços do SUS na sua região</p>
+  </header>
+
+  <main class="p-6 space-y-10">
+    <!-- 1. Busca de exames -->
+    <section class="bg-white p-4 rounded shadow fade-in">
+      <h2 class="text-xl font-semibold mb-2">🔍 Buscar Exames</h2>
+      <input type="text" id="searchInput" placeholder="Digite o nome do exame ou sintoma..." class="w-full p-2 border rounded focus:ring-2 focus:ring-blue-400">
+      <div id="searchResults" class="mt-2 text-sm text-gray-700 hidden"></div>
+    </section>
+
+    <!-- 2. Mapa de unidades próximas -->
+    <section class="bg-white p-4 rounded shadow fade-in">
+      <h2 class="text-xl font-semibold mb-2">📍 Unidades Próximas</h2>
+      <div id="map" class="rounded"></div>
+    </section>
+
+    <!-- 3. Passo a passo para agendar -->
+    <section class="bg-white p-4 rounded shadow fade-in">
+      <h2 class="text-xl font-semibold mb-2">📝 Como Agendar um Exame</h2>
+      <ol class="list-decimal list-inside space-y-1 text-sm">
+        <li>Vá até a UBS mais próxima.</li>
+        <li>Solicite o encaminhamento com um profissional.</li>
+        <li>Leve documento com foto, cartão do SUS e comprovante de residência.</li>
+        <li>Agende presencialmente ou via aplicativo estadual (se disponível).</li>
+      </ol>
+    </section>
+
+    <!-- 4. Notificações inteligentes -->
+    <section class="bg-white p-4 rounded shadow fade-in">
+      <h2 class="text-xl font-semibold mb-2">🔔 Notificações Inteligentes</h2>
+      <ul class="list-disc list-inside text-sm text-gray-700">
+        <li>"Já fez seu check-up este ano?"</li>
+        <li>"Exame de glicemia disponível na sua UBS!"</li>
+      </ul>
+    </section>
+
+    <!-- 5. Perguntas frequentes -->
+    <section class="bg-white p-4 rounded shadow fade-in">
+      <h2 class="text-xl font-semibold mb-2">❓ Perguntas Frequentes</h2>
+      <details class="mb-2">
+        <summary class="font-medium">Preciso de jejum?</summary>
+        <p class="text-sm text-gray-700">Depende do exame. Glicemia, por exemplo, sim.</p>
+      </details>
+      <details class="mb-2">
+        <summary class="font-medium">Posso levar criança?</summary>
+        <p class="text-sm text-gray-700">Sim, desde que acompanhada por um adulto responsável.</p>
+      </details>
+      <details>
+        <summary class="font-medium">Quanto tempo demora?</summary>
+        <p class="text-sm text-gray-700">O tempo varia por exame e unidade, mas geralmente entre 15 min e 1 hora.</p>
+      </details>
+    </section>
+
+    <!-- 6. Depoimentos da comunidade -->
+    <section class="bg-white p-4 rounded shadow fade-in">
+      <h2 class="text-xl font-semibold mb-2">💬 Avaliações da Comunidade</h2>
+      <div class="text-sm text-gray-700 space-y-2">
+        <p><strong>Maria (RJ):</strong> "Fui bem atendida, mas a espera foi de 40 minutos."</p>
+        <p><strong>José (SP):</strong> "Equipe muito prestativa na UBS Central!"</p>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const searchInput = document.getElementById("searchInput");
+    const searchResults = document.getElementById("searchResults");
+
+    const mockExams = {
+      "colesterol": "Disponível no SUS. Requer encaminhamento clínico geral.",
+      "sangue fino": "Necessário pedido médico. UBS realiza o exame básico de hemograma."
+    };
+
+    searchInput.addEventListener("input", () => {
+      const query = searchInput.value.toLowerCase();
+      const result = mockExams[query];
+      searchResults.textContent = result ? result : "Nenhuma informação encontrada.";
+      searchResults.classList.remove('hidden');
+    });
+
+    function initMap() {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((position) => {
+          const userLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude
+          };
+
+          const map = new google.maps.Map(document.getElementById("map"), {
+            zoom: 14,
+            center: userLocation
+          });
+
+          new google.maps.Marker({
+            position: userLocation,
+            map: map,
+            title: "Você está aqui"
+          });
+
+          const service = new google.maps.places.PlacesService(map);
+          service.nearbySearch({
+            location: userLocation,
+            radius: 15000,
+            type: ["hospital"]
+          }, (results, status) => {
+            if (status === google.maps.places.PlacesServiceStatus.OK) {
+              results.forEach(place => {
+                new google.maps.Marker({
+                  position: place.geometry.location,
+                  map: map,
+                  title: place.name
+                });
+              });
+            }
+          });
+        }, () => {
+          alert("Não foi possível obter sua localização.");
+        });
+      } else {
+        alert("Geolocalização não suportada pelo seu navegador.");
+      }
+    }
+  </script>
+  <script async defer src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAAMTqhJMkWs_WVmVHX5Ccg8CsExCfq6Zs&callback=initMap&libraries=places"></script>
+</body>
+</html>
